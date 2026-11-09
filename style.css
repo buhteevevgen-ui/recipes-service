@@ -133,14 +133,15 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 3px; paddi
   margin: 32px 0 12px;
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
 }
-.reset { font: 400 14px var(--body); color: var(--muted); background: none; border: 0; cursor: pointer; text-decoration: underline; padding: 4px; }
-.checks { list-style: none; padding: 0; margin: 0; }
-.checks li { border-bottom: 1px solid var(--line); }
-.checks label { display: flex; gap: 12px; padding: 11px 2px; cursor: pointer; align-items: flex-start; }
-.checks input { width: 20px; height: 20px; margin: 2px 0 0; flex: none; accent-color: var(--ok); }
-.checks input:checked + span { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
-ol.checks { counter-reset: step; }
-ol.checks .num { font: 600 15px/1.5 var(--display); color: var(--accent); min-width: 1.4em; flex: none; }
+.ingredients, .steps { list-style: none; padding: 0; margin: 0; }
+.ingredients li, .steps li { border-bottom: 1px solid var(--line); padding: 11px 2px; }
+.ingredients li { padding-left: 20px; position: relative; }
+.ingredients li::before {
+  content: ''; position: absolute; left: 4px; top: 21px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+}
+.steps li { display: flex; gap: 12px; align-items: flex-start; }
+.steps .num { font: 600 15px/1.55 var(--display); color: var(--accent); min-width: 1.4em; flex: none; }
 .notes {
   margin-top: 32px;
   background: var(--accent-soft);

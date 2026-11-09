@@ -111,20 +111,11 @@
   }
 
   // ---------- Рецепт ----------
-  function storeKey(id) { return 'recipe-checks-' + id; }
-  function loadChecks(id) { try { return JSON.parse(localStorage.getItem(storeKey(id))) || {}; } catch (e) { return {}; } }
-  function saveChecks(id, v) { try { localStorage.setItem(storeKey(id), JSON.stringify(v)); } catch (e) {} }
-
   function renderRecipe(id) {
     var r = recipes.filter(function (x) { return String(x.id) === String(id); })[0];
     if (!r) {
       app.innerHTML = '<a class="back" href="#/">← Все рецепты</a><p class="state">Такого рецепта нет.</p>';
       return;
-    }
-    var checks = loadChecks(r.id);
-    function box(kind, i, inner) {
-      var k = kind + i;
-      return '<li><label><input type="checkbox" data-k="' + k + '"' + (checks[k] ? ' checked' : '') + '><span>' + inner + '</span></label></li>';
     }
     app.innerHTML =
       '<a class="back" href="#/">← Все рецепты</a>' +
@@ -134,23 +125,15 @@
       ((r.tags || []).length ? '<div class="tags">' + r.tags.map(function (t) {
         return '<button class="tag" type="button" data-tag="' + esc(t) + '">' + esc(t) + '</button>';
       }).join('') + '</div>' : '') +
-      '<h2>Ингредиенты <button class="reset" type="button">сбросить отметки</button></h2>' +
-      '<ul class="checks">' + (r.ingredients || []).map(function (x, i) { return box('i', i, esc(x)); }).join('') + '</ul>' +
+      '<h2>Ингредиенты</h2>' +
+      '<ul class="ingredients">' + (r.ingredients || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
       '<h2>Приготовление</h2>' +
-      '<ol class="checks">' + (r.steps || []).map(function (x, i) {
-        var k = 's' + i;
-        return '<li><label><input type="checkbox" data-k="' + k + '"' + (checks[k] ? ' checked' : '') + '><span class="num">' + (i + 1) + '</span><span>' + esc(x) + '</span></label></li>';
+      '<ol class="steps">' + (r.steps || []).map(function (x, i) {
+        return '<li><span class="num">' + (i + 1) + '</span><span>' + esc(x) + '</span></li>';
       }).join('') + '</ol>' +
       (r.notes ? '<div class="notes"><strong>Заметки</strong>' + esc(r.notes) + '</div>' : '') +
       '</article>';
 
-    app.querySelectorAll('input[type=checkbox]').forEach(function (c) {
-      c.addEventListener('change', function () { checks[c.dataset.k] = c.checked; saveChecks(r.id, checks); });
-    });
-    app.querySelector('.reset').addEventListener('click', function () {
-      checks = {}; saveChecks(r.id, checks);
-      app.querySelectorAll('input[type=checkbox]').forEach(function (c) { c.checked = false; });
-    });
     app.querySelectorAll('.tag').forEach(function (b) {
       b.addEventListener('click', function () { state.tag = b.dataset.tag; state.q = ''; location.hash = '#/'; });
     });
