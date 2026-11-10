@@ -158,7 +158,8 @@
           (state.section === x.id ? ' aria-current="page"' : '') + '>' + esc(x.title) + ' <span>' + n + '</span></a>';
       }).join('') + '</nav>';
 
-    app.innerHTML = nav +
+    // Скрытый h1: единственный заголовок первого уровня на списке и в разделе
+    app.innerHTML = '<h1 class="visually-hidden">' + (state.section ? esc(sectionTitle(state.section)) : 'Рецепты') + '</h1>' + nav +
       '<div class="search"><input id="q" type="search" placeholder="Название, ингредиент или тег" autocomplete="off" aria-label="Поиск рецептов" value="' + esc(state.q) + '"></div>' +
       (tagNames.length ? '<div class="tags" role="group" aria-label="Теги">' + tagNames.map(function (t) {
         return '<button class="tag" type="button" data-tag="' + esc(t) + '" aria-pressed="' + (state.tag === t) + '">' + esc(t) + '</button>';
