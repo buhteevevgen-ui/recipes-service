@@ -183,3 +183,4 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 3px; paddi
   .top { padding-top: 18px; }
   .item a { padding: 16px; }
 }
+body::after { content: ''; display: block; width: 400px; height: 5px; }
