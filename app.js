@@ -26,7 +26,10 @@
     if (f === 'bbq') {
       var b = r.bbq;
       if (!b) return '';
-      return [b.meat, b.wood, b.heat].concat(b.marinade || [], [b.marinade_variant], b.tips || []).join(' ');
+      var parts = [b.meat, b.wood, b.heat, b.marinade_note, b.marinade_variant].concat(b.marinade || [], b.tips || []);
+      (Array.isArray(b.summary) ? b.summary : []).forEach(function (f) { parts.push(f.label, f.value, f.note); });
+      (Array.isArray(b.stages) ? b.stages : []).forEach(function (s) { parts.push(s.title, s.note); });
+      return parts.join(' ');
     }
     var v = r[f];
     return Array.isArray(v) ? v.join(' ') : String(v || '');
@@ -51,14 +54,32 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  // Подсветка идёт по исходному тексту, экранируется каждый кусок отдельно
   function highlight(text, stems) {
-    var safe = esc(text);
-    if (!stems.length) return safe;
-    return safe.replace(/[\p{L}\p{N}]+/gu, function (w) {
-      var n = w.toLowerCase().replace(/ё/g, 'е');
-      return stems.some(function (s) { return match(n.slice(0, STEM_LEN), s); }) ? '<mark>' + w + '</mark>' : w;
-    });
+    text = String(text);
+    if (!stems.length) return esc(text);
+    var out = '', last = 0, re = /[\p{L}\p{N}]+/gu, m;
+    while ((m = re.exec(text))) {
+      var w = m[0], n = w.toLowerCase().replace(/ё/g, 'е');
+      out += esc(text.slice(last, m.index));
+      out += stems.some(function (s) { return match(n.slice(0, STEM_LEN), s); }) ? '<mark>' + esc(w) + '</mark>' : esc(w);
+      last = m.index + w.length;
+    }
+    return out + esc(text.slice(last));
   }
+  // Неразрывные пробелы: «74 °C», «1 ч», «лучше 5», «+ отдых» и диапазоны «110–120» не рвутся при переносе
+  function tight(s) {
+    return String(s)
+      .replace(/(\d) (°C|ч|мин|сут|кг|г|мл)(?![\p{L}])/gu, '$1\u00a0$2')
+      .replace(/(\p{L}) (\d)/gu, '$1\u00a0$2')
+      .replace(/\+ /g, '+\u00a0')
+      .replace(/(\d)–(?=\d)/g, '$1\u2060–\u2060');
+  }
+  function safeDecode(s) {
+    try { return decodeURIComponent(s); } catch (e) { return s; }
+  }
+  var BASE_TITLE = 'Сервис рецептов';
+  function setTitle(part) { document.title = part ? part + ' — ' + BASE_TITLE : BASE_TITLE; }
   function plural(n, one, few, many) {
     var m10 = n % 10, m100 = n % 100;
     if (m10 === 1 && m100 !== 11) return one;
@@ -67,8 +88,8 @@
   }
   function metaLine(r) {
     var parts = [];
-    if (r.time_minutes) parts.push(r.time_minutes + ' мин');
-    if (r.servings) parts.push(r.servings + ' ' + plural(r.servings, 'порция', 'порции', 'порций'));
+    if (r.time_minutes) parts.push(esc(r.time_minutes) + ' мин');
+    if (r.servings) parts.push(esc(r.servings) + ' ' + plural(r.servings, 'порция', 'порции', 'порций'));
     if (r.bbq && r.bbq.meat) parts.push(esc(r.bbq.meat));
     if (r.ingredients) parts.push(r.ingredients.length + ' ' + plural(r.ingredients.length, 'ингредиент', 'ингредиента', 'ингредиентов'));
     return parts.map(function (p) { return '<span>' + p + '</span>'; }).join('');
@@ -84,19 +105,19 @@
   // bbq.summary: [{label, value, note}] — крупные факты; bbq.tips: [строки] — важные фишки.
   // Если summary не задан, факты собираются из chamber_temp_c, target_internal_c и marinade_days.
   function bbqSummary(b) {
-    var facts = b.summary;
+    var facts = Array.isArray(b.summary) ? b.summary : null;
     if (!facts) {
       facts = [];
       if (b.chamber_temp_c) facts.push({ label: 'Камера', value: b.chamber_temp_c + ' °C' });
       if (b.target_internal_c) facts.push({ label: 'Внутри', value: b.target_internal_c + ' °C' });
       if (b.marinade_days) facts.push({ label: 'Маринование', value: b.marinade_days + ' сут.' });
     }
-    var tips = b.tips || [];
+    var tips = Array.isArray(b.tips) ? b.tips : [];
     if (!facts.length && !tips.length) return '';
     return '<section class="summary"><h2>Кратко</h2>' +
       (facts.length ? '<dl class="facts">' + facts.map(function (f) {
-        return '<div><dt>' + esc(f.label) + '</dt><dd>' + esc(f.value) +
-          (f.note ? ' <small>' + esc(f.note) + '</small>' : '') + '</dd></div>';
+        return '<div><dt>' + esc(f.label) + '</dt><dd>' + esc(tight(f.value)) +
+          (f.note ? ' <small>' + esc(tight(f.note)) + '</small>' : '') + '</dd></div>';
       }).join('') + '</dl>' : '') +
       (tips.length ? '<ul class="tips">' + tips.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '') +
       '</section>';
@@ -128,6 +149,7 @@
     if (state.tag && !pool.some(function (r) { return (r.tags || []).indexOf(state.tag) !== -1; })) state.tag = '';
     pool.forEach(function (r) { (r.tags || []).forEach(function (t) { allTags[t] = (allTags[t] || 0) + 1; }); });
     var tagNames = Object.keys(allTags).sort(function (a, b) { return allTags[b] - allTags[a] || a.localeCompare(b, 'ru'); });
+    setTitle(state.section ? sectionTitle(state.section) : '');
 
     var nav = '<nav class="sections" aria-label="Разделы">' +
       [{ id: '', title: 'Все' }].concat(sections).map(function (x) {
@@ -173,7 +195,7 @@
       return;
     }
     el.innerHTML = list.map(function (x) {
-      return '<li class="item"><a href="#/r/' + x.r.id + '"><h2>' + highlight(x.r.title, stems) + '</h2><div class="meta">' + metaLine(x.r) + '</div></a></li>';
+      return '<li class="item"><a href="#/r/' + esc(encodeURIComponent(x.r.id)) + '"><h2>' + highlight(x.r.title, stems) + '</h2><div class="meta">' + metaLine(x.r) + '</div></a></li>';
     }).join('');
   }
 
@@ -181,9 +203,11 @@
   function renderRecipe(id) {
     var r = recipes.filter(function (x) { return String(x.id) === String(id); })[0];
     if (!r) {
+      setTitle('Рецепт не найден');
       app.innerHTML = '<a class="back" href="#/">← Все рецепты</a><p class="state">Такого рецепта нет.</p>';
       return;
     }
+    setTitle(r.title);
     var b = r.bbq || null;
     app.innerHTML =
       (state.section
@@ -219,9 +243,9 @@
   // ---------- Маршруты ----------
   function route() {
     var m = location.hash.match(/^#\/r\/(.+)$/);
-    if (m) return renderRecipe(decodeURIComponent(m[1]));
+    if (m) return renderRecipe(safeDecode(m[1]));
     var sm = location.hash.match(/^#\/s\/(.+)$/);
-    var next = sm ? decodeURIComponent(sm[1]) : '';
+    var next = sm ? safeDecode(sm[1]) : '';
     if (next !== state.section) { state.section = next; state.tag = ''; }
     renderList();
   }

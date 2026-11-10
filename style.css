@@ -5,6 +5,7 @@
   --muted: #6f6457;
   --line: #e4dccd;
   --accent: #b4532a;
+  --accent-text: #a34a24; /* темнее акцента: контраст текста на --paper не ниже 4,5:1 */
   --accent-soft: #f3e1d4;
   --ok: #5c7a3e;
   --radius: 14px;
@@ -77,11 +78,11 @@ code { font-size: 0.92em; background: var(--accent-soft); padding: 1px 5px; bord
   padding: 8px 14px; border-radius: 10px; font-weight: 500; font-size: 15px;
   color: var(--muted); transition: background .15s, color .15s;
 }
-.section span { font-weight: 400; font-size: 13px; opacity: .7; margin-left: 2px; }
+.section span { font-weight: 400; font-size: 13px; margin-left: 2px; }
 .section:hover { color: var(--ink); background: var(--accent-soft); }
 .section[aria-current="page"] { background: var(--ink); color: var(--paper); }
-.eyebrow { font-size: 14px; color: var(--accent); font-weight: 500; margin-top: 4px; }
-.eyebrow a { text-decoration: none; }
+.eyebrow { font-size: 14px; color: var(--accent-text); font-weight: 500; margin-top: 4px; }
+.eyebrow a { text-decoration: none; display: inline-block; padding: 4px 2px; margin: -4px 0; }
 .eyebrow a:hover { text-decoration: underline; }
 
 /* Поиск */
@@ -142,7 +143,7 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 3px; paddi
   color: var(--muted); text-decoration: none; font-size: 15px;
   padding: 6px 0; margin-bottom: 8px;
 }
-.back:hover { color: var(--accent); }
+.back:hover { color: var(--accent-text); }
 .recipe h1 { font: 600 clamp(28px, 6vw, 40px)/1.15 var(--display); margin: 4px 0 12px; letter-spacing: -0.015em; }
 .recipe .meta { margin-bottom: 14px; font-size: 15px; }
 .recipe .tags { margin-bottom: 28px; }
@@ -159,7 +160,7 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 3px; paddi
   width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
 }
 .steps li { display: flex; gap: 12px; align-items: flex-start; }
-.steps .num { font: 600 15px/1.55 var(--display); color: var(--accent); min-width: 1.4em; flex: none; }
+.steps .num { font: 600 15px/1.55 var(--display); color: var(--accent-text); min-width: 1.4em; flex: none; }
 .notes {
   margin-top: 32px;
   background: var(--accent-soft);
