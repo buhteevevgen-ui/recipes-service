@@ -9,7 +9,8 @@
   var app = document.getElementById('app');
   var countEl = document.getElementById('count');
   var recipes = [];
-  var state = { q: '', tag: '' };
+  var sections = [];
+  var state = { q: '', tag: '', section: '' };
 
   function normalize(text) {
     var words = String(text || '').toLowerCase().replace(/ё/g, 'е').match(/[\p{L}\p{N}]+/gu) || [];
@@ -67,13 +68,28 @@
     return parts.map(function (p) { return '<span>' + p + '</span>'; }).join('');
   }
 
+  function inSection(r, id) { return !id || (r.sections || []).indexOf(id) !== -1; }
+  function sectionTitle(id) {
+    var s = sections.filter(function (x) { return x.id === id; })[0];
+    return s ? s.title : id;
+  }
+
   // ---------- Список ----------
   function renderList() {
     var allTags = {};
-    recipes.forEach(function (r) { (r.tags || []).forEach(function (t) { allTags[t] = (allTags[t] || 0) + 1; }); });
+    var pool = recipes.filter(function (r) { return inSection(r, state.section); });
+    if (state.tag && !pool.some(function (r) { return (r.tags || []).indexOf(state.tag) !== -1; })) state.tag = '';
+    pool.forEach(function (r) { (r.tags || []).forEach(function (t) { allTags[t] = (allTags[t] || 0) + 1; }); });
     var tagNames = Object.keys(allTags).sort(function (a, b) { return allTags[b] - allTags[a] || a.localeCompare(b, 'ru'); });
 
-    app.innerHTML =
+    var nav = '<nav class="sections" aria-label="Разделы">' +
+      [{ id: '', title: 'Все' }].concat(sections).map(function (x) {
+        var n = recipes.filter(function (r) { return inSection(r, x.id); }).length;
+        return '<a class="section" href="' + (x.id ? '#/s/' + encodeURIComponent(x.id) : '#/') + '"' +
+          (state.section === x.id ? ' aria-current="page"' : '') + '>' + esc(x.title) + ' <span>' + n + '</span></a>';
+      }).join('') + '</nav>';
+
+    app.innerHTML = nav +
       '<div class="search"><input id="q" type="search" placeholder="Название, ингредиент или тег" autocomplete="off" aria-label="Поиск рецептов" value="' + esc(state.q) + '"></div>' +
       (tagNames.length ? '<div class="tags" role="group" aria-label="Теги">' + tagNames.map(function (t) {
         return '<button class="tag" type="button" data-tag="' + esc(t) + '" aria-pressed="' + (state.tag === t) + '">' + esc(t) + '</button>';
@@ -95,6 +111,7 @@
   function renderResults() {
     var stems = normalize(state.q);
     var list = recipes
+      .filter(function (r) { return inSection(r, state.section); })
       .filter(function (r) { return !state.tag || (r.tags || []).indexOf(state.tag) !== -1; })
       .map(function (r) { return { r: r, s: stems.length ? score(r, stems) : 1 }; })
       .filter(function (x) { return x.s > 0; })
@@ -102,7 +119,10 @@
 
     var el = document.getElementById('list');
     if (!list.length) {
-      el.innerHTML = '<li class="state">Ничего не нашлось. Попробуйте другое слово или снимите фильтр.</li>';
+      var empty = !stems.length && !state.tag && state.section;
+      el.innerHTML = '<li class="state">' + (empty
+        ? 'В разделе «' + esc(sectionTitle(state.section)) + '» пока нет рецептов.'
+        : 'Ничего не нашлось. Попробуйте другое слово или снимите фильтр.') + '</li>';
       return;
     }
     el.innerHTML = list.map(function (x) {
@@ -118,8 +138,13 @@
       return;
     }
     app.innerHTML =
-      '<a class="back" href="#/">← Все рецепты</a>' +
+      (state.section
+        ? '<a class="back" href="#/s/' + encodeURIComponent(state.section) + '">← ' + esc(sectionTitle(state.section)) + '</a>'
+        : '<a class="back" href="#/">← Все рецепты</a>') +
       '<article class="recipe">' +
+      ((r.sections || []).length ? '<div class="eyebrow">' + r.sections.map(function (id) {
+        return '<a href="#/s/' + encodeURIComponent(id) + '">' + esc(sectionTitle(id)) + '</a>';
+      }).join(' · ') + '</div>' : '') +
       '<h1>' + esc(r.title) + '</h1>' +
       '<div class="meta">' + metaLine(r) + '</div>' +
       ((r.tags || []).length ? '<div class="tags">' + r.tags.map(function (t) {
@@ -135,7 +160,7 @@
       '</article>';
 
     app.querySelectorAll('.tag').forEach(function (b) {
-      b.addEventListener('click', function () { state.tag = b.dataset.tag; state.q = ''; location.hash = '#/'; });
+      b.addEventListener('click', function () { state.tag = b.dataset.tag; state.q = ''; state.section = ''; location.hash = '#/'; });
     });
     window.scrollTo(0, 0);
   }
@@ -143,14 +168,18 @@
   // ---------- Маршруты ----------
   function route() {
     var m = location.hash.match(/^#\/r\/(.+)$/);
-    if (m) renderRecipe(decodeURIComponent(m[1]));
-    else renderList();
+    if (m) return renderRecipe(decodeURIComponent(m[1]));
+    var sm = location.hash.match(/^#\/s\/(.+)$/);
+    var next = sm ? decodeURIComponent(sm[1]) : '';
+    if (next !== state.section) { state.section = next; state.tag = ''; }
+    renderList();
   }
 
   fetch('recipes.json', { cache: 'no-cache' })
     .then(function (res) { if (!res.ok) throw new Error(res.status); return res.json(); })
     .then(function (data) {
       recipes = Array.isArray(data) ? data : (data.recipes || []);
+      sections = data.sections || [];
       countEl.textContent = recipes.length + ' ' + plural(recipes.length, 'рецепт', 'рецепта', 'рецептов');
       window.addEventListener('hashchange', route);
       route();

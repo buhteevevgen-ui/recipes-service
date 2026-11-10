@@ -1,8 +1,29 @@
 {
+  "sections": [
+    {
+      "id": "everyday",
+      "title": "На каждый день"
+    },
+    {
+      "id": "grill",
+      "title": "Гриль"
+    },
+    {
+      "id": "smoker",
+      "title": "Смокер"
+    },
+    {
+      "id": "party",
+      "title": "На компанию"
+    }
+  ],
   "recipes": [
     {
       "id": 1,
       "title": "Орзо с голубым сыром, луком и куриным бульоном",
+      "sections": [
+        "everyday"
+      ],
       "servings": 2,
       "time_minutes": 25,
       "tags": [

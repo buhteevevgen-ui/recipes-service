@@ -4,6 +4,8 @@
 Команды:
   python recipes.py add               — добавить рецепт (интерактивно)
   python recipes.py list              — список всех рецептов
+  python recipes.py list гриль        — рецепты одного раздела
+  python recipes.py sections          — список разделов
   python recipes.py search орзо сыр   — поиск (все слова должны встретиться)
   python recipes.py show 1            — показать рецепт по номеру
   python recipes.py delete 1          — удалить рецепт
@@ -29,7 +31,20 @@ def load():
         data = json.load(f)
     if isinstance(data, list):  # поддержка старого формата — просто список
         data = {"recipes": data}
+    data.setdefault("sections", [])
     return data
+
+
+def section_title(data, sid):
+    return next((s["title"] for s in data["sections"] if s["id"] == sid), sid)
+
+
+def find_section(data, name):
+    name = name.lower().replace("ё", "е")
+    for s in data["sections"]:
+        if name in (s["id"].lower(), s["title"].lower().replace("ё", "е")):
+            return s
+    return next((s for s in data["sections"] if name in s["title"].lower().replace("ё", "е")), None)
 
 
 def save(data):
@@ -80,7 +95,9 @@ def print_short(r):
     print(line)
 
 
-def print_full(r):
+def print_full(r, data=None):
+    if data and r.get("sections"):
+        print("\n" + " · ".join(section_title(data, sid) for sid in r["sections"]))
     print(f"\n{r['title']}")
     print("=" * len(r["title"]))
     if r.get("servings") or r.get("time_minutes"):
@@ -116,6 +133,20 @@ def to_int(value):
         return None
 
 
+def ask_sections(data):
+    if not data["sections"]:
+        return []
+    for i, s in enumerate(data["sections"], 1):
+        print(f"  {i}. {s['title']}")
+    raw = input("Разделы — номера через запятую: ")
+    picked = []
+    for part in raw.split(","):
+        n = to_int(part.strip())
+        if n and 1 <= n <= len(data["sections"]):
+            picked.append(data["sections"][n - 1]["id"])
+    return picked
+
+
 def cmd_add(data):
     title = input("Название: ").strip()
     if not title:
@@ -124,6 +155,7 @@ def cmd_add(data):
     recipe = {
         "id": max((r["id"] for r in data["recipes"]), default=0) + 1,
         "title": title,
+        "sections": ask_sections(data),
         "servings": to_int(input("Порций: ").strip()),
         "time_minutes": to_int(input("Время, мин: ").strip()),
         "tags": [t.strip() for t in input("Теги через запятую: ").split(",") if t.strip()],
@@ -150,10 +182,21 @@ def main(argv):
 
     if cmd == "add":
         cmd_add(data)
+    elif cmd == "sections":
+        for sec in data["sections"]:
+            n = sum(1 for r in data["recipes"] if sec["id"] in r.get("sections", []))
+            print(f"{sec['title']} ({n})")
     elif cmd == "list":
-        if not data["recipes"]:
+        recipes = data["recipes"]
+        if args:
+            sec = find_section(data, " ".join(args))
+            if not sec:
+                print("Такого раздела нет. Разделы: " + ", ".join(s["title"] for s in data["sections"]))
+                return
+            recipes = [r for r in recipes if sec["id"] in r.get("sections", [])]
+        if not recipes:
             print("Рецептов пока нет.")
-        for r in data["recipes"]:
+        for r in recipes:
             print_short(r)
     elif cmd == "search":
         stems = normalize(" ".join(args))
@@ -168,7 +211,7 @@ def main(argv):
             print_short(r)
     elif cmd == "show" and args:
         r = find(data, args[0])
-        print_full(r) if r else print("Рецепт не найден.")
+        print_full(r, data) if r else print("Рецепт не найден.")
     elif cmd == "delete" and args:
         r = find(data, args[0])
         if not r:

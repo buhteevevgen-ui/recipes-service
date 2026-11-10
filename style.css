@@ -66,6 +66,24 @@ main { flex: 1; padding-top: 16px; padding-bottom: 40px; }
 }
 code { font-size: 0.92em; background: var(--accent-soft); padding: 1px 5px; border-radius: 5px; }
 
+/* Разделы */
+.sections {
+  display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 -20px 4px; padding: 2px 20px 10px;
+}
+.sections::-webkit-scrollbar { display: none; }
+.section {
+  flex: none; text-decoration: none; white-space: nowrap;
+  padding: 8px 14px; border-radius: 10px; font-weight: 500; font-size: 15px;
+  color: var(--muted); transition: background .15s, color .15s;
+}
+.section span { font-weight: 400; font-size: 13px; opacity: .7; margin-left: 2px; }
+.section:hover { color: var(--ink); background: var(--accent-soft); }
+.section[aria-current="page"] { background: var(--ink); color: var(--paper); }
+.eyebrow { font-size: 14px; color: var(--accent); font-weight: 500; margin-top: 4px; }
+.eyebrow a { text-decoration: none; }
+.eyebrow a:hover { text-decoration: underline; }
+
 /* Поиск */
 .search {
   position: sticky;

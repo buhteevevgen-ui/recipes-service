@@ -9,6 +9,10 @@
 - `recipes.py` — консольная программа: добавление, список, поиск, просмотр, удаление.
 - `recipes/` — рецепты в читаемом виде (Markdown).
 
+## Разделы
+
+Разделы перечислены в начале `recipes.json` (`sections`): На каждый день, Гриль, Смокер, На компанию. У каждого рецепта есть поле `sections` со списком id разделов, например `["smoker", "party"]`. Рецепт может быть в нескольких разделах сразу. Чтобы добавить новый раздел, допишите его в `sections`.
+
 ## Как добавить рецепт
 
 Отредактировать `recipes.json` прямо на GitHub (иконка карандаша) или командой `python recipes.py add`, затем закоммитить. Сайт обновится через минуту-две.
@@ -19,6 +23,8 @@
 
 ```
 python recipes.py list
+python recipes.py list гриль
+python recipes.py sections
 python recipes.py search орзо сыр
 python recipes.py show 1
 python recipes.py add
