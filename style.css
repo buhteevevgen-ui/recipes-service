@@ -58,6 +58,15 @@ button, input { font: inherit; color: inherit; }
 }
 .count { color: var(--muted); font-size: 14px; }
 main { flex: 1; padding-top: 16px; padding-bottom: 40px; }
+/* Виден только скринридерам, места не занимает */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
 .foot {
   color: var(--muted);
   font-size: 13px;
