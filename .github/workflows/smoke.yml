@@ -1,0 +1,67 @@
+name: smoke
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Адрес сайта для проверки'
+        required: false
+        default: 'https://buhteevevgen-ui.github.io/recipes-service/'
+      issue:
+        description: 'Номер PR или issue для комментария (необязательно)'
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: smoke-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PLAYWRIGHT_VERSION: '1.64.1'
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      # Playwright ставится во временную папку runner, в репозиторий ничего не добавляется
+      - name: Установить Playwright и Chromium
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw"
+          npm install --prefix "$RUNNER_TEMP/pw" --no-audit --no-fund --no-package-lock "playwright@${PLAYWRIGHT_VERSION}"
+          node "$RUNNER_TEMP/pw/node_modules/playwright/cli.js" install --with-deps chromium
+
+      - name: Smoke-проверка
+        env:
+          SMOKE_MODE: ${{ github.event_name == 'pull_request' && 'local' || 'live' }}
+          SMOKE_URL: ${{ github.event_name == 'pull_request' && 'http://127.0.0.1:8000/' || inputs.url }}
+          SMOKE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+          SMOKE_ISSUE: ${{ github.event.pull_request.number || inputs.issue }}
+          SMOKE_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PW_DIR: ${{ runner.temp }}/pw
+        run: |
+          if [ "$SMOKE_MODE" = "local" ]; then
+            python3 -m http.server 8000 --bind 127.0.0.1 >/dev/null 2>&1 &
+            SERVER_PID=$!
+            trap 'kill "$SERVER_PID"' EXIT
+            for i in $(seq 1 20); do
+              curl -fsS http://127.0.0.1:8000/recipes.json >/dev/null && break
+              sleep 0.5
+            done
+          fi
+          node .github/smoke/smoke.mjs
