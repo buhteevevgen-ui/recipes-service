@@ -10,7 +10,7 @@
   var countEl = document.getElementById('count');
   var recipes = [];
   var sections = [];
-  var state = { q: '', tag: '', section: '' };
+  var state = { q: '', section: '' };
 
   function normalize(text) {
     var words = String(text || '').toLowerCase().replace(/ё/g, 'е').match(/[\p{L}\p{N}]+/gu) || [];
@@ -144,11 +144,6 @@
 
   // ---------- Список ----------
   function renderList() {
-    var allTags = {};
-    var pool = recipes.filter(function (r) { return inSection(r, state.section); });
-    if (state.tag && !pool.some(function (r) { return (r.tags || []).indexOf(state.tag) !== -1; })) state.tag = '';
-    pool.forEach(function (r) { (r.tags || []).forEach(function (t) { allTags[t] = (allTags[t] || 0) + 1; }); });
-    var tagNames = Object.keys(allTags).sort(function (a, b) { return allTags[b] - allTags[a] || a.localeCompare(b, 'ru'); });
     setTitle(state.section ? sectionTitle(state.section) : '');
 
     var nav = '<nav class="sections" aria-label="Разделы">' +
@@ -161,20 +156,10 @@
     // Скрытый h1: единственный заголовок первого уровня на списке и в разделе
     app.innerHTML = '<h1 class="visually-hidden">' + (state.section ? esc(sectionTitle(state.section)) : 'Рецепты') + '</h1>' + nav +
       '<div class="search"><input id="q" type="search" placeholder="Название, ингредиент или тег" autocomplete="off" aria-label="Поиск рецептов" value="' + esc(state.q) + '"></div>' +
-      (tagNames.length ? '<div class="tags" role="group" aria-label="Теги">' + tagNames.map(function (t) {
-        return '<button class="tag" type="button" data-tag="' + esc(t) + '" aria-pressed="' + (state.tag === t) + '">' + esc(t) + '</button>';
-      }).join('') + '</div>' : '') +
       '<ul class="list" id="list"></ul>';
 
     var input = document.getElementById('q');
     input.addEventListener('input', function () { state.q = input.value; renderResults(); });
-    app.querySelectorAll('.tag').forEach(function (b) {
-      b.addEventListener('click', function () {
-        state.tag = state.tag === b.dataset.tag ? '' : b.dataset.tag;
-        app.querySelectorAll('.tag').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.tag === state.tag)); });
-        renderResults();
-      });
-    });
     renderResults();
   }
 
@@ -182,17 +167,16 @@
     var stems = normalize(state.q);
     var list = recipes
       .filter(function (r) { return inSection(r, state.section); })
-      .filter(function (r) { return !state.tag || (r.tags || []).indexOf(state.tag) !== -1; })
       .map(function (r) { return { r: r, s: stems.length ? score(r, stems) : 1 }; })
       .filter(function (x) { return x.s > 0; })
       .sort(function (a, b) { return b.s - a.s || a.r.title.localeCompare(b.r.title, 'ru'); });
 
     var el = document.getElementById('list');
     if (!list.length) {
-      var empty = !stems.length && !state.tag && state.section;
+      var empty = !stems.length && state.section;
       el.innerHTML = '<li class="state">' + (empty
         ? 'В разделе «' + esc(sectionTitle(state.section)) + '» пока нет рецептов.'
-        : 'Ничего не нашлось. Попробуйте другое слово или снимите фильтр.') + '</li>';
+        : 'Ничего не нашлось. Попробуйте другое слово.') + '</li>';
       return;
     }
     el.innerHTML = list.map(function (x) {
@@ -220,9 +204,6 @@
       }).join(' · ') + '</div>' : '') +
       '<h1>' + esc(r.title) + '</h1>' +
       '<div class="meta">' + metaLine(r) + '</div>' +
-      ((r.tags || []).length ? '<div class="tags">' + r.tags.map(function (t) {
-        return '<button class="tag" type="button" data-tag="' + esc(t) + '">' + esc(t) + '</button>';
-      }).join('') + '</div>' : '') +
       (b ? bbqSummary(b) : '') +
       '<h2>Ингредиенты</h2>' +
       '<ul class="ingredients">' + (r.ingredients || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
@@ -235,9 +216,6 @@
       (r.notes ? '<div class="notes"><strong>Заметки</strong>' + esc(r.notes) + '</div>' : '') +
       '</article>';
 
-    app.querySelectorAll('.tag').forEach(function (b) {
-      b.addEventListener('click', function () { state.tag = b.dataset.tag; state.q = ''; state.section = ''; location.hash = '#/'; });
-    });
     window.scrollTo(0, 0);
   }
 
@@ -246,8 +224,7 @@
     var m = location.hash.match(/^#\/r\/(.+)$/);
     if (m) return renderRecipe(safeDecode(m[1]));
     var sm = location.hash.match(/^#\/s\/(.+)$/);
-    var next = sm ? safeDecode(sm[1]) : '';
-    if (next !== state.section) { state.section = next; state.tag = ''; }
+    state.section = sm ? safeDecode(sm[1]) : '';
     renderList();
   }
 
