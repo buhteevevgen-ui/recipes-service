@@ -205,7 +205,7 @@
     var r = recipes.filter(function (x) { return String(x.id) === String(id); })[0];
     if (!r) {
       setTitle('Рецепт не найден');
-      app.innerHTML = '<a class="back" href="#/">← Все рецепты</a><p class="state">Такого рецепта нет.</p>';
+      app.innerHTML = '<h1 class="visually-hidden">Рецепт не найден</h1><a class="back" href="#/">← Все рецепты</a><p class="state">Такого рецепта нет.</p>';
       return;
     }
     setTitle(r.title);
