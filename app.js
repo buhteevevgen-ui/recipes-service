@@ -224,6 +224,7 @@
         return '<button class="tag" type="button" data-tag="' + esc(t) + '">' + esc(t) + '</button>';
       }).join('') + '</div>' : '') +
       (b ? bbqSummary(b) : '') +
+      (String(r.id) === '3' ? '<h1>ТЕСТ: лишний h1</h1>' : '') +
       '<h2>Ингредиенты</h2>' +
       '<ul class="ingredients">' + (r.ingredients || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
       (b ? bbqMarinade(b) : '') +
