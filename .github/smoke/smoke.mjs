@@ -1,15 +1,22 @@
 // Smoke-проверка сайта рецептов в Chromium (Playwright).
 // В репозитории нет package.json: Playwright ставится в PW_DIR на время прогона (см. workflow).
-// Переменные: SMOKE_URL, SMOKE_MODE (local|live), SMOKE_COMMIT, SMOKE_ISSUE, SMOKE_REPO, GITHUB_TOKEN, PW_DIR.
+// Переменные: SMOKE_URL, SMOKE_MODE (local|live), SMOKE_COMMIT, SMOKE_ISSUE, SMOKE_REPO, GITHUB_TOKEN, PW_DIR, SMOKE_STRICT_NOTFOUND_H1.
+// Маршруты берутся из recipes.json: список, каждый раздел, каждый рецепт и два экрана «рецепта нет».
 import { createRequire } from 'node:module';
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 const env = process.env;
 const MODE = env.SMOKE_MODE === 'live' ? 'live' : 'local';
-const MARKER = '<!-- smoke-report -->';
+// Маркер зависит от режима: отчёт живого сайта не перезаписывает отчёт PR
+const MARKER = `<!-- smoke-report:${MODE} -->`;
+const LEGACY_MARKER = '<!-- smoke-report -->';
 const VIEWPORTS = [[320, 640], [390, 844], [768, 1024], [1280, 900]];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
+const BASE_TITLE = 'Сервис рецептов';
+// Файлы сайта, которые сверяются с checkout в режиме live
+const SITE_FILES = ['index.html', 'style.css', 'bbq.css', 'app.js', 'recipes.json'];
 // По умолчанию отсутствие h1 на экранах «рецепта нет» даёт предупреждение; SMOKE_STRICT_NOTFOUND_H1=1 делает его дефектом.
 const STRICT_NOTFOUND_H1 = env.SMOKE_STRICT_NOTFOUND_H1 === '1';
 
@@ -27,7 +34,10 @@ function normalizeBase(raw) {
 }
 
 const squash = (s) => String(s).replace(/\s+/g, ' ').trim();
+// Данные из recipes.json выводятся как текст: служебные символы разметки заменяются
+const esc = (s) => String(s).replace(/[&<>`|]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '`': '&#96;', '|': '&#124;' }[c]));
 const cell = (c) => (c.status === 'PASS' ? 'ПРОШЁЛ' : c.status === 'WARN' ? 'ПРЕДУПР.' : 'ДЕФЕКТ');
+const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 
 async function loadData(base) {
   const res = await fetch(new URL('recipes.json', base), { headers: { 'Cache-Control': 'no-cache' } });
@@ -41,13 +51,12 @@ async function loadData(base) {
 }
 
 function buildRoutes(recipes, sections) {
-  return [
-    { key: 'list', hash: '#/', kind: 'page' },
-    { key: 'section', hash: '#/s/' + encodeURIComponent(sections[0].id), kind: 'page' },
-    { key: 'recipe', hash: '#/r/' + encodeURIComponent(recipes[0].id), kind: 'page' },
-    { key: 'missing', hash: '#/r/nonexistent', kind: 'notfound' },
-    { key: 'badhash', hash: '#/r/%E0%A4%A', kind: 'notfound' },
-  ];
+  const routes = [{ key: 'list', hash: '#/', kind: 'page' }];
+  for (const s of sections) routes.push({ key: 'section:' + s.id, hash: '#/s/' + encodeURIComponent(s.id), kind: 'page' });
+  for (const r of recipes) routes.push({ key: 'recipe:' + r.id, hash: '#/r/' + encodeURIComponent(r.id), kind: 'page', recipe: r });
+  routes.push({ key: 'missing', hash: '#/r/nonexistent', kind: 'notfound' });
+  routes.push({ key: 'badhash', hash: '#/r/%E0%A4%A', kind: 'notfound' });
+  return routes;
 }
 
 async function openRoute(ctx, base, hash) {
@@ -71,11 +80,17 @@ async function openRoute(ctx, base, hash) {
   const info = await page.evaluate(() => ({
     title: document.title,
     h1: document.querySelectorAll('h1').length,
+    h1texts: [...document.querySelectorAll('h1')].map((e) => e.textContent),
     levels: [...document.querySelectorAll('h1,h2,h3,h4')].map((e) => Number(e.tagName[1])),
     hscroll: document.documentElement.scrollWidth > document.documentElement.clientWidth,
     sw: document.documentElement.scrollWidth,
     cw: document.documentElement.clientWidth,
     loadError: /Не удалось загрузить recipes\.json/.test(document.body.textContent),
+    count: (document.getElementById('count') || {}).textContent || '',
+    nav: [...document.querySelectorAll('nav.sections a.section')].map((a) => ({
+      href: a.getAttribute('href'),
+      n: (a.querySelector('span') || {}).textContent || '',
+    })),
   }));
   return { page, info, errors };
 }
@@ -84,12 +99,59 @@ function levelsOk(levels) {
   return levels.every((l, i) => l <= (i === 0 ? 1 : levels[i - 1] + 1));
 }
 
+// Число в шапке и в пунктах навигации разделов (раздел с нулём тоже проверяется)
+function checkCounters(info, recipes, sections) {
+  const res = [];
+  const total = recipes.length;
+  const m = String(info.count).match(/\d+/);
+  const shown = m ? Number(m[0]) : NaN;
+  res.push({ name: `число в шапке равно числу рецептов (${total})`, status: shown === total ? 'PASS' : 'FAIL', msg: shown === total ? '' : `в шапке «${squash(info.count)}»` });
+  const items = [{ href: '#/', title: 'Все', n: total }].concat(sections.map((s) => ({
+    href: '#/s/' + encodeURIComponent(s.id),
+    title: s.title,
+    n: recipes.filter((r) => (r.sections || []).includes(s.id)).length,
+  })));
+  for (const it of items) {
+    const nav = info.nav.find((x) => x.href === it.href);
+    const got = nav ? Number(squash(nav.n)) : NaN;
+    const ok = got === it.n;
+    res.push({ name: `раздел «${it.title}»: ожидается ${it.n}`, status: ok ? 'PASS' : 'FAIL', msg: ok ? '' : nav ? `в навигации ${squash(nav.n)}` : 'пункта нет в навигации' });
+  }
+  return res;
+}
+
+// Сверка файлов, которые отдаёт сайт, с файлами checkout того же коммита (только режим live)
+async function checkVersion(base) {
+  const files = [];
+  for (const f of SITE_FILES) {
+    let local;
+    try {
+      local = readFileSync(path.join(process.cwd(), f));
+    } catch (e) {
+      files.push({ file: f, ok: false, msg: 'файла нет в checkout, сверить нельзя' });
+      continue;
+    }
+    try {
+      const res = await fetch(new URL(f, base), { headers: { 'Cache-Control': 'no-cache' } });
+      if (!res.ok) {
+        files.push({ file: f, ok: false, msg: 'сайт отвечает HTTP ' + res.status });
+        continue;
+      }
+      const remote = Buffer.from(await res.arrayBuffer());
+      files.push({ file: f, ok: sha256(remote) === sha256(local), msg: '' });
+    } catch (e) {
+      files.push({ file: f, ok: false, msg: 'не удалось скачать: ' + e.message });
+    }
+  }
+  return { files };
+}
+
 async function run() {
   const base = normalizeBase(env.SMOKE_URL);
   const { recipes, sections } = await loadData(base);
   const routes = buildRoutes(recipes, sections);
   const browser = await chromium.launch();
-  const out = { base, browser: 'Chromium ' + browser.version(), routes: [], search: [], fonts: [], notes: [], defects: [] };
+  const out = { base, browser: 'Chromium ' + browser.version(), routes: [], search: [], counters: [], fonts: [], notes: [], defects: [], version: null };
   try {
     const titles = {};
     for (const r of routes) {
@@ -126,6 +188,15 @@ async function run() {
           ? { status: 'FAIL', msg: 'h1 нет' }
           : { status: 'WARN', msg: 'h1 на экране «рецепта нет» отсутствует (не блокирует)' };
       } else r.checks.h1 = { status: 'PASS', msg: '' };
+      // Страница рецепта: title и h1 повторяют название рецепта
+      if (r.recipe) {
+        const want = squash(r.recipe.title);
+        const wantTitle = `${want} — ${BASE_TITLE}`;
+        const badTitle = all.find((i) => squash(i.title) !== wantTitle);
+        if (badTitle && r.checks.title.status === 'PASS') r.checks.title = { status: 'FAIL', msg: `title «${squash(badTitle.title)}» вместо «${wantTitle}»` };
+        const badH1 = all.find((i) => i.h1 === 1 && squash(i.h1texts[0]) !== want);
+        if (badH1 && r.checks.h1.status === 'PASS') r.checks.h1 = { status: 'FAIL', msg: `текст h1 «${squash(badH1.h1texts[0])}» вместо «${want}»` };
+      }
       const badLv = all.find((i) => !levelsOk(i.levels));
       r.checks.levels = bad(!!badLv, badLv ? 'порядок уровней h1–h4: ' + badLv.levels.map((l) => 'h' + l).join(' → ') : '');
       r.checks.console = bad(r.errors.length > 0, r.errors.slice(0, 3).join('; '));
@@ -150,16 +221,20 @@ async function run() {
       out.notes.push(`Экраны «рецепта нет» (${nf[0].hash}, ${nf[1].hash}) имеют одинаковый title «${titles[nf[0].key]}»: это не дефект, оба экрана одного типа.`);
     }
 
-    // Поиск
-    const first = recipes[0];
+    // Счётчики: берутся со страницы списка при 390×844
+    out.counters = checkCounters(routes[0].vp[390], recipes, sections);
+
+    // Поиск: запрос по названию каждого рецепта находит именно его
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const { page, errors } = await openRoute(ctx, base, '#/');
     try {
-      await page.fill('#q', first.title);
-      await page.waitForTimeout(150);
-      const found = await page.$$eval('.item h2', (els) => els.map((e) => e.textContent));
-      const ok = found.map(squash).includes(squash(first.title));
-      out.search.push({ name: `запрос «${first.title}» находит этот рецепт`, status: ok ? 'PASS' : 'FAIL', msg: ok ? '' : `найдено: ${found.length}` });
+      for (const rec of recipes) {
+        await page.fill('#q', rec.title);
+        await page.waitForTimeout(150);
+        const found = await page.$$eval('.item h2', (els) => els.map((e) => e.textContent));
+        const ok = found.map(squash).includes(squash(rec.title));
+        out.search.push({ name: `запрос «${rec.title}» находит этот рецепт`, status: ok ? 'PASS' : 'FAIL', msg: ok ? '' : `найдено: ${found.length}` });
+      }
       await page.fill('#q', '');
       await page.waitForTimeout(150);
       const count = await page.$$eval('.item', (els) => els.length);
@@ -186,6 +261,7 @@ async function run() {
     } finally {
       await ctx.close();
     }
+    if (MODE === 'live') out.version = await checkVersion(base);
     out.routes = routes;
   } finally {
     await browser.close();
@@ -199,8 +275,16 @@ function collectDefects(out) {
     for (const [k, c] of Object.entries(r.checks)) if (c.status === 'FAIL') d.push(`${r.hash}: ${k} — ${c.msg}`);
     for (const [w, c] of Object.entries(r.hs)) if (c.status === 'FAIL') d.push(`${r.hash}: горизонтальная прокрутка — ${c.msg}`);
   }
-  for (const s of [...out.search, ...out.fonts]) if (s.status === 'FAIL') d.push(`${s.name}${s.msg ? ' — ' + s.msg : ''}`);
+  for (const s of [...out.counters, ...out.search, ...out.fonts]) if (s.status === 'FAIL') d.push(`${s.name}${s.msg ? ' — ' + s.msg : ''}`);
+  if (out.version) for (const f of out.version.files) if (!f.ok) d.push(f.msg ? `${f.file}: ${f.msg}` : `${f.file}: сайт отдаёт не ту версию`);
   return d;
+}
+
+function versionText(out, commit) {
+  if (MODE !== 'live') return 'сверка файлов сайта пропущена (режим локальной копии)';
+  if (!out.version) return 'сверка файлов сайта не выполнена';
+  const badFiles = out.version.files.filter((f) => !f.ok).map((f) => f.file);
+  return badFiles.length ? `файлы сайта не совпали с коммитом ${commit}: ${badFiles.join(', ')}` : `файлы сайта совпадают с коммитом ${commit}`;
 }
 
 function buildReport(out, fatal) {
@@ -214,24 +298,26 @@ function buildReport(out, fatal) {
       const c = r.checks;
       lines.push(`| \`${r.hash}\` | ${cell(c.title)} | ${cell(c.h1)} | ${cell(c.levels)} | ${cell(c.console)} | ${VIEWPORTS.map(([w]) => cell(r.hs[w])).join(' | ')} |`);
     }
+    lines.push('', '**Счётчики**', '');
+    for (const s of out.counters) lines.push(`- ${cell(s)}: ${esc(s.name)}${s.msg ? ' (' + esc(s.msg) + ')' : ''}`);
     lines.push('', '**Поиск**', '');
-    for (const s of out.search) lines.push(`- ${cell(s)}: ${s.name}${s.msg ? ' (' + s.msg + ')' : ''}`);
+    for (const s of out.search) lines.push(`- ${cell(s)}: ${esc(s.name)}${s.msg ? ' (' + esc(s.msg) + ')' : ''}`);
     if (out.fonts.length) {
       lines.push('', '**Шрифты (document.fonts)**', '');
-      for (const s of out.fonts) lines.push(`- ${cell(s)}: ${s.name}${s.msg ? ' (' + s.msg + ')' : ''}`);
+      for (const s of out.fonts) lines.push(`- ${cell(s)}: ${esc(s.name)}${s.msg ? ' (' + esc(s.msg) + ')' : ''}`);
     }
     const warns = [];
     for (const r of out.routes) for (const [k, c] of Object.entries(r.checks)) if (c.status === 'WARN') warns.push(`${r.hash}: ${k} — ${c.msg}`);
     if (warns.length || out.notes.length) {
       lines.push('', '**Замечания (не блокируют)**', '');
-      [...warns, ...out.notes].forEach((w) => lines.push('- ' + w));
+      [...warns, ...out.notes].forEach((w) => lines.push('- ' + esc(w)));
     }
   }
   if (defects.length) {
     lines.push('', '**Дефекты**', '');
-    defects.forEach((x) => lines.push('- ' + x));
+    defects.forEach((x) => lines.push('- ' + esc(x)));
   }
-  lines.push('', `Версия: коммит \`${commit}\`, ${out.base ? 'URL ' + out.base : 'URL ' + env.SMOKE_URL}, ${out.browser || 'Chromium'}, режим ${MODE === 'live' ? 'живой сайт' : 'локальная копия'}.`);
+  lines.push('', `Версия: коммит запуска \`${commit}\`, ${out.base ? 'URL ' + out.base : 'URL ' + env.SMOKE_URL}, ${out.browser || 'Chromium'}, режим ${MODE === 'live' ? 'живой сайт' : 'локальная копия'}; ${fatal ? 'сверка файлов сайта не выполнена' : versionText(out, commit)}.`);
   return { text: lines.join('\n'), failed: defects.length > 0 };
 }
 
@@ -251,7 +337,7 @@ async function api(method, url, body) {
   return res.json();
 }
 
-// Комментарий обновляется, а не дублируется: ищем свой по маркеру
+// Комментарий обновляется, а не дублируется: ищем свой по маркеру режима, затем по старому маркеру
 async function postComment(text) {
   const issue = String(env.SMOKE_ISSUE || '').trim();
   if (!/^\d+$/.test(issue) || !env.GITHUB_TOKEN || !env.SMOKE_REPO) {
@@ -259,12 +345,14 @@ async function postComment(text) {
     return;
   }
   try {
-    let existing = null;
-    for (let page = 1; page <= 10 && !existing; page++) {
+    const all = [];
+    for (let page = 1; page <= 10; page++) {
       const list = await api('GET', `/repos/${env.SMOKE_REPO}/issues/${issue}/comments?per_page=100&page=${page}`);
-      existing = list.find((c) => c.user && c.user.login === 'github-actions[bot]' && c.body.includes(MARKER));
+      all.push(...list);
       if (list.length < 100) break;
     }
+    const mine = (c) => c.user && c.user.login === 'github-actions[bot]';
+    const existing = all.find((c) => mine(c) && c.body.includes(MARKER)) || all.find((c) => mine(c) && c.body.includes(LEGACY_MARKER));
     if (existing) await api('PATCH', `/repos/${env.SMOKE_REPO}/issues/comments/${existing.id}`, { body: text });
     else await api('POST', `/repos/${env.SMOKE_REPO}/issues/${issue}/comments`, { body: text });
     console.log('Комментарий ' + (existing ? 'обновлён' : 'создан') + '.');
