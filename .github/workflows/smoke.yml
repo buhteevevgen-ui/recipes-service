@@ -52,6 +52,7 @@ jobs:
           SMOKE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
           SMOKE_ISSUE: ${{ github.event.pull_request.number || inputs.issue }}
           SMOKE_REPO: ${{ github.repository }}
+          SMOKE_STRICT_NOTFOUND_H1: '1'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PW_DIR: ${{ runner.temp }}/pw
         run: |
