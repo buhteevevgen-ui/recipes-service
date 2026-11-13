@@ -22,16 +22,35 @@
     var n = Math.max(3, Math.min(word.length, stem.length) - 1);
     return word.slice(0, n) === stem.slice(0, n);
   }
+  // Ингредиент — строка или объект { item, qty, qty_max, unit, note, optional }.
+  // Текст для показа и поиска: «item — qty[–qty_max] unit, note, по желанию»; строка возвращается как есть.
+  function ingNum(v) {
+    if (typeof v === 'number' && isFinite(v)) return String(v).replace('.', ',');
+    return typeof v === 'string' ? v : '';
+  }
+  function ingText(x) {
+    if (typeof x === 'string') return x;
+    if (!x || typeof x !== 'object' || Array.isArray(x)) return x == null ? '' : String(x);
+    var q = ingNum(x.qty), qmax = ingNum(x.qty_max), parts = [];
+    if (q && qmax) q += '–' + qmax;
+    if (typeof x.unit === 'string' && x.unit) q += (q ? ' ' : '') + x.unit;
+    if (q) parts.push(q);
+    if (typeof x.note === 'string' && x.note) parts.push(x.note);
+    if (x.optional === true) parts.push('по желанию');
+    var item = (typeof x.item === 'string' || typeof x.item === 'number') ? String(x.item) : '';
+    return item + (parts.length ? (item ? ' — ' : '') + parts.join(', ') : '');
+  }
   function fieldText(r, f) {
     if (f === 'bbq') {
       var b = r.bbq;
       if (!b) return '';
-      var parts = [b.meat, b.wood, b.heat, b.marinade_note, b.marinade_variant].concat(b.marinade || [], b.tips || []);
+      var parts = [b.meat, b.wood, b.heat, b.marinade_note, b.marinade_variant].concat((Array.isArray(b.marinade) ? b.marinade : []).map(ingText), b.tips || []);
       (Array.isArray(b.summary) ? b.summary : []).forEach(function (f) { parts.push(f.label, f.value, f.note); });
       (Array.isArray(b.stages) ? b.stages : []).forEach(function (s) { parts.push(s.title, s.note); });
       return parts.join(' ');
     }
     var v = r[f];
+    if (f === 'ingredients' && Array.isArray(v)) return v.map(ingText).join(' ');
     return Array.isArray(v) ? v.join(' ') : String(v || '');
   }
   function score(r, stems) {
@@ -125,7 +144,7 @@
   function bbqMarinade(b) {
     if (!(b.marinade || []).length) return '';
     return '<h2>Маринад</h2>' +
-      '<ul class="ingredients">' + b.marinade.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
+      '<ul class="ingredients">' + b.marinade.map(function (x) { return '<li>' + esc(ingText(x)) + '</li>'; }).join('') + '</ul>' +
       (b.marinade_note ? '<p class="subnote">' + esc(b.marinade_note) + '</p>' : '') +
       (b.marinade_variant ? '<div class="notes variant"><strong>Вариант</strong>' + esc(b.marinade_variant) + '</div>' : '');
   }
@@ -206,7 +225,7 @@
       '<div class="meta">' + metaLine(r) + '</div>' +
       (b ? bbqSummary(b) : '') +
       '<h2>Ингредиенты</h2>' +
-      '<ul class="ingredients">' + (r.ingredients || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
+      '<ul class="ingredients">' + (r.ingredients || []).map(function (x) { return '<li>' + esc(ingText(x)) + '</li>'; }).join('') + '</ul>' +
       (b ? bbqMarinade(b) : '') +
       (b ? bbqStages(b) : '') +
       '<h2>Приготовление</h2>' +

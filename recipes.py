@@ -59,9 +59,43 @@ def normalize(text):
     return [w[:STEM_LEN] for w in re.findall(r"\w+", text)]
 
 
+def ing_text(x):
+    """Ингредиент: строка или словарь {item, qty, qty_max, unit, note, optional} -> текст для показа и поиска."""
+    if isinstance(x, str):
+        return x
+    if not isinstance(x, dict):
+        return "" if x is None else str(x)
+
+    def num(v):
+        if isinstance(v, float) and v.is_integer():
+            v = int(v)
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            return str(v).replace(".", ",")
+        return v if isinstance(v, str) else ""
+
+    q, qmax, parts = num(x.get("qty")), num(x.get("qty_max")), []
+    if q and qmax:
+        q += "–" + qmax
+    unit = x.get("unit")
+    if isinstance(unit, str) and unit:
+        q += (" " if q else "") + unit
+    if q:
+        parts.append(q)
+    note = x.get("note")
+    if isinstance(note, str) and note:
+        parts.append(note)
+    if x.get("optional") is True:
+        parts.append("по желанию")
+    item = x.get("item")
+    item = str(item) if isinstance(item, (str, int, float)) and not isinstance(item, bool) else ""
+    return item + (((" — " if item else "") + ", ".join(parts)) if parts else "")
+
+
 def field_text(recipe, field):
     value = recipe.get(field, "")
     if isinstance(value, list):
+        if field == "ingredients":
+            return " ".join(ing_text(v) for v in value)
         return " ".join(value)
     return str(value or "")
 
@@ -106,7 +140,7 @@ def print_full(r, data=None):
         print("Теги: " + ", ".join(r["tags"]))
     print("\nИнгредиенты:")
     for item in r.get("ingredients", []):
-        print(f"  - {item}")
+        print(f"  - {ing_text(item)}")
     print("\nПриготовление:")
     for i, step in enumerate(r.get("steps", []), 1):
         print(f"  {i}. {step}")
