@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru" data-theme="crypt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>Прототип редизайна — Сервис рецептов</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="redesign.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#/"><svg class="ico" width="28" height="28" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4 0h2v1h-2zM3 1h1v1h-1zM6 1h1v1h-1zM4 2h2v1h-2zM2 3h6v1h-6zM1 4h2v1h-2zM4 4h2v1h-2zM7 4h2v1h-2zM0 5h1v1h-1zM3 5h1v1h-1zM6 5h1v1h-1zM9 5h1v1h-1zM0 6h1v1h-1zM3 6h1v1h-1zM6 6h1v1h-1zM9 6h1v1h-1zM0 7h1v1h-1zM3 7h1v1h-1zM6 7h1v1h-1zM9 7h1v1h-1zM1 8h1v1h-1zM4 8h2v1h-2zM8 8h1v1h-1zM2 9h6v1h-6z"/></svg> Сервис рецептов</a>
+    <fieldset class="themes">
+      <legend>Тема</legend>
+      <button type="button" class="chip" data-theme-set="crypt" aria-pressed="true"><span class="mark" aria-hidden="true">▶ </span>Склеп</button>
+      <button type="button" class="chip" data-theme-set="ember" aria-pressed="false"><span class="mark" aria-hidden="true">▶ </span>Жар</button>
+      <button type="button" class="chip" data-theme-set="parchment" aria-pressed="false"><span class="mark" aria-hidden="true">▶ </span>Пергамент</button>
+    </fieldset>
+  </header>
+  <main id="app">
+    <section class="screen" id="screen-list" data-screen="">
+      <div class="hero px">
+        <h1 tabindex="-1">Книга рецептов</h1>
+        <p>Прототип оформления T-12. Данные вставлены статично.</p>
+      </div>
+      <ul class="sections" aria-label="Разделы"><li><button type="button" class="chip" data-section="" aria-pressed="true"><span class="mark" aria-hidden="true">▶ </span>Все <span class="n">4</span></button></li><li><button type="button" class="chip" data-section="everyday" aria-pressed="false"><span class="mark" aria-hidden="true">▶ </span>На каждый день <span class="n">3</span></button></li><li><button type="button" class="chip" data-section="grill" aria-pressed="false"><span class="mark" aria-hidden="true">▶ </span>Гриль <span class="n">0</span></button></li><li><button type="button" class="chip" data-section="smoker" aria-pressed="false"><span class="mark" aria-hidden="true">▶ </span>Смокер <span class="n">1</span></button></li><li><button type="button" class="chip" data-section="party" aria-pressed="false"><span class="mark" aria-hidden="true">▶ </span>На компанию <span class="n">1</span></button></li></ul>
+      <div class="search">
+        <label for="q">Поиск</label>
+        <input id="q" type="search" autocomplete="off">
+      </div>
+      <ul class="cards" id="cards"><li data-sections="everyday" data-title="говяжьи щёки, томлённые в красном вине"><a class="card px" href="#/r/6"><h2>Говяжьи щёки, томлённые в красном вине</h2><span class="meta">4 порции · 4 ч · 15 ингредиентов</span><ul class="badges"><li class="badge">На каждый день</li></ul></a></li><li data-sections="everyday" data-title="говядина по-бургундски с картофельным пюре"><a class="card px" href="#/r/4"><h2>Говядина по-бургундски с картофельным пюре</h2><span class="meta">4 порции · 19 ингредиентов</span><ul class="badges"><li class="badge">На каждый день</li></ul></a></li><li data-sections="everyday" data-title="орзо с голубым сыром, луком и куриным бульоном"><a class="card px" href="#/r/1"><h2>Орзо с голубым сыром, луком и куриным бульоном</h2><span class="meta">2 порции · 25 мин · 9 ингредиентов</span><span class="stub">В прототипе открывается заглушка</span><ul class="badges"><li class="badge">На каждый день</li></ul></a></li><li data-sections="smoker party" data-title="крылышки баффало (на 1 кг)"><a class="card px" href="#/r/5"><h2>Крылышки баффало (на 1 кг)</h2><span class="meta">10 ингредиентов</span><span class="stub">В прототипе открывается заглушка</span><ul class="badges"><li class="badge">Смокер</li><li class="badge">На компанию</li></ul></a></li></ul>
+      <p class="empty" id="empty" hidden>Ничего не найдено.</p>
+    </section>
+    <article class="screen" id="screen-r6" data-screen="r/6" hidden>
+  <a class="btn back" href="#/">← К списку</a>
+  <header class="recipe-head px">
+    <h1 tabindex="-1">Говяжьи щёки, томлённые в красном вине</h1>
+    <ul class="meta-row"><li>Порции: <strong>4</strong></li><li>Время: <strong>240 мин</strong></li><li>Ингредиентов: <strong>15</strong></li></ul>
+    <ul class="badges"><li class="badge">На каждый день</li></ul>
+  </header>
+  <section class="block px rescale" aria-labelledby="rs-h-6">
+    <h2 id="rs-h-6"><svg class="ico" width="20" height="20" viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="currentColor" d="M0 0h9v1h-9zM1 1h1v1h-1zM7 1h1v1h-1zM2 2h1v1h-1zM6 2h1v1h-1zM3 3h1v1h-1zM5 3h1v1h-1zM4 4h1v1h-1zM3 5h1v1h-1zM5 5h1v1h-1zM2 6h1v1h-1zM4 6h1v1h-1zM6 6h1v1h-1zM1 7h1v1h-1zM3 7h3v1h-3zM7 7h1v1h-1zM0 8h9v1h-9z"/></svg> Пересчитать</h2>
+    <p class="base">Исходно: 4 порции</p>
+    <div class="row">
+      <div class="field">
+        <label for="rs-in-6">Порции</label>
+        <input id="rs-in-6" type="text" inputmode="decimal" autocomplete="off" value="4" data-base="4" aria-describedby="rs-hint-6 rs-err-6">
+      </div>
+      <button type="button" class="rs-reset" data-for="rs-in-6">Сбросить</button>
+    </div>
+    <p class="error" id="rs-err-6" role="alert" hidden>Введите число больше нуля, например 2 или 1,5. Количества остались прежними.</p>
+    <p class="hint" id="rs-hint-6">Заглушка прототипа: количества не пересчитываются. Единица: порции.</p>
+  </section>
+  <section class="block px" aria-labelledby="ing-h-6">
+    <h2 id="ing-h-6"><svg class="ico" width="22" height="16" viewBox="0 0 12 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="currentColor" d="M2 0h8v1h-8zM1 1h1v1h-1zM10 1h1v1h-1zM0 2h1v1h-1zM11 2h1v1h-1zM0 3h12v1h-12zM0 4h1v1h-1zM5 4h2v1h-2zM11 4h1v1h-1zM0 5h1v1h-1zM4 5h1v1h-1zM7 5h1v1h-1zM11 5h1v1h-1zM0 6h1v1h-1zM5 6h2v1h-2zM11 6h1v1h-1zM0 7h1v1h-1zM11 7h1v1h-1zM0 8h12v1h-12z"/></svg> Ингредиенты</h2>
+    <ul><li>Говяжьи щёки — 1–1,2 кг</li><li>Красное сухое вино — 750 мл</li><li>Говяжий или куриный бульон — 300–400 мл</li><li>Лук репчатый (крупный) — 2 шт.</li><li>Морковь — 2 шт.</li><li>Чеснок — 1 головка</li><li>Сельдерей — 2 стебля</li><li>Томатная паста — 2 ст. л., с горкой</li><li>Тимьян свежий — 5–6 веточек (или 1 ч. л. сушёного)</li><li>Лавровый лист — 2 шт.</li><li>Растительное масло — для жарки</li><li>Соль, свежемолотый чёрный перец — по вкусу</li><li>Сахар — 1 ч. л.</li><li>Для сгущения соуса: сливочное масло — 30 г, по желанию</li><li>Для сгущения соуса: мука — 30 г, по желанию</li></ul>
+  </section>
+  <section class="block px" aria-labelledby="st-h-6">
+    <h2 id="st-h-6"><svg class="ico" width="22" height="18" viewBox="0 0 12 10" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="currentColor" d="M1 0h9v1h-9zM0 1h1v1h-1zM2 1h1v1h-1zM10 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM10 2h1v1h-1zM1 3h2v1h-2zM4 3h5v1h-5zM10 3h1v1h-1zM2 4h1v1h-1zM10 4h1v1h-1zM2 5h1v1h-1zM4 5h5v1h-5zM10 5h1v1h-1zM2 6h1v1h-1zM10 6h1v1h-1zM2 7h1v1h-1zM4 7h4v1h-4zM10 7h1v1h-1zM2 8h1v1h-1zM10 8h2v1h-2zM2 9h9v1h-9z"/></svg> Шаги</h2>
+    <ol><li>Очистите щёки от внешних плёнок, серебристой кожицы и крупного поверхностного жира. За час до готовки посолите и поперчите со всех сторон.</li><li>В глубокой толстостенной кастрюле разогрейте масло на сильном огне. Обжарьте щёки по 3–4 минуты с каждой стороны до тёмно-коричневой корочки. Переложите на тарелку.</li><li>Убавьте огонь до среднего. В той же кастрюле обжарьте нарезанные лук, морковь и сельдерей 5–7 минут до золотистости, соскребая лопаткой пригоревшие соки от мяса.</li><li>Добавьте томатную пасту и сахар. Перемешайте и жарьте 2 минуты.</li><li>Влейте вино. Добавьте разрезанную пополам головку чеснока, тимьян и лавровый лист. Доведите до кипения и покипятите 3–5 минут, чтобы выпарился алкоголь.</li><li>Верните мясо в кастрюлю. Долейте бульон так, чтобы жидкость полностью покрывала щёки.</li><li>Доведите до слабого кипения, накройте крышкой и томите на минимальном огне 3–3,5 часа. Можно готовить в духовке при 150 °C. Мясо готово, когда оно легко распадается при нажатии вилкой.</li><li>Достаньте щёки и накройте фольгой. Соус процедите через сито, овощи выбросьте. Попробуйте соус на соль и перец.</li><li>Чтобы соус стал гуще, смешайте мягкое сливочное масло с мукой и вмешайте в кипящий соус. Или просто уварите соус на среднем огне на треть.</li><li>Верните мясо в соус, прогрейте пару минут и подавайте.</li></ol>
+  </section>
+  <section class="block px" aria-labelledby="nt-h-6">
+    <h2 id="nt-h-6"><svg class="ico" width="20" height="18" viewBox="0 0 11 10" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5 0h1v1h-1zM4 1h3v1h-3zM3 2h2v1h-2zM6 2h2v1h-2zM3 3h1v1h-1zM7 3h1v1h-1zM2 4h7v1h-7zM3 5h5v1h-5zM4 6h3v1h-3zM5 7h1v1h-1zM3 8h5v1h-5zM2 9h7v1h-7z"/></svg> Заметки</h2>
+    <p>Главное — слабое кипение и достаточное время. Если мясо жёсткое, значит, оно кипело слишком сильно или готовилось мало. Без вина: замените его 500 мл насыщенного бульона, 250 мл виноградного сока или вишнёвого морса и 2 ст. л. бальзамического уксуса. Блюдо особенно вкусно на следующий день: остудите, уберите в холодильник, снимите застывший жир и разогрейте. Подавайте с картофельным пюре, пастой папарделле, полентой или запечёнными корнеплодами.</p>
+  </section>
+</article>
+    <article class="screen" id="screen-r4" data-screen="r/4" hidden>
+  <a class="btn back" href="#/">← К списку</a>
+  <header class="recipe-head px">
+    <h1 tabindex="-1">Говядина по-бургундски с картофельным пюре</h1>
+    <ul class="meta-row"><li>Порции: <strong>4</strong></li><li>Ингредиентов: <strong>19</strong></li></ul>
+    <ul class="badges"><li class="badge">На каждый день</li></ul>
+  </header>
+  <section class="block px rescale" aria-labelledby="rs-h-4">
+    <h2 id="rs-h-4"><svg class="ico" width="20" height="20" viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="currentColor" d="M0 0h9v1h-9zM1 1h1v1h-1zM7 1h1v1h-1zM2 2h1v1h-1zM6 2h1v1h-1zM3 3h1v1h-1zM5 3h1v1h-1zM4 4h1v1h-1zM3 5h1v1h-1zM5 5h1v1h-1zM2 6h1v1h-1zM4 6h1v1h-1zM6 6h1v1h-1zM1 7h1v1h-1zM3 7h3v1h-3zM7 7h1v1h-1zM0 8h9v1h-9z"/></svg> Пересчитать</h2>
+    <p class="base">Исходно: 4 порции, 600 г говядины</p>
+    <div class="row">
+      <div class="field">
+        <label for="rs-in-4">Порции</label>
+        <input id="rs-in-4" type="text" inputmode="decimal" autocomplete="off" value="4" data-base="4" aria-describedby="rs-hint-4 rs-err-4">
+      </div>
+      <button type="button" class="rs-reset" data-for="rs-in-4">Сбросить</button>
+    </div>
+    <p class="error" id="rs-err-4" role="alert" hidden>Введите число больше нуля, например 2 или 1,5. Количества остались прежними.</p>
+    <p class="hint" id="rs-hint-4">Заглушка прототипа: количества не пересчитываются. Единица: порции.</p>
+  </section>
+  <section class="block px" aria-labelledby="ing-h-4">
+    <h2 id="ing-h-4"><svg class="ico" width="22" height="16" viewBox="0 0 12 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="currentColor" d="M2 0h8v1h-8zM1 1h1v1h-1zM10 1h1v1h-1zM0 2h1v1h-1zM11 2h1v1h-1zM0 3h12v1h-12zM0 4h1v1h-1zM5 4h2v1h-2zM11 4h1v1h-1zM0 5h1v1h-1zM4 5h1v1h-1zM7 5h1v1h-1zM11 5h1v1h-1zM0 6h1v1h-1zM5 6h2v1h-2zM11 6h1v1h-1zM0 7h1v1h-1zM11 7h1v1h-1zM0 8h12v1h-12z"/></svg> Ингредиенты</h2>
+    <ul><li>Говядина (лопатка или толстый край) — 600 г</li><li>Бекон или сырая грудинка — 70–80 г, по желанию</li><li>Морковь — 1 крупная или 2 средние</li><li>Лук репчатый — 1 крупная луковица</li><li>Чеснок — 2 зубчика</li><li>Мука — 1 ст. л., можно 1,5 ст. л., если соус покажется жидким</li><li>Красное сухое вино — 375–400 мл</li><li>Говяжий бульон или вода — 150–200 мл</li><li>Томатная паста — 0,5 ст. л.</li><li>Тимьян — 2–3 веточки или 0,5 ч. л. сухого</li><li>Лавровый лист — 1 шт.</li><li>Соль, перец — по вкусу</li><li>Для жарки: 1 ст. л. сливочного масла и 1 ст. л. растительного (или топлёное масло)</li><li>Для пюре: картофель — 700 г</li><li>Для пюре: молоко горячее — 100–150 мл</li><li>Для пюре: сливочное масло — 30–50 г</li><li>Для пюре: соль — по вкусу</li><li>Для пюре: мускатный орех — щепотка, по желанию</li><li>Свежая петрушка для подачи — по желанию</li></ul>
+  </section>
+  <section class="block px" aria-labelledby="st-h-4">
+    <h2 id="st-h-4"><svg class="ico" width="22" height="18" viewBox="0 0 12 10" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="currentColor" d="M1 0h9v1h-9zM0 1h1v1h-1zM2 1h1v1h-1zM10 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM10 2h1v1h-1zM1 3h2v1h-2zM4 3h5v1h-5zM10 3h1v1h-1zM2 4h1v1h-1zM10 4h1v1h-1zM2 5h1v1h-1zM4 5h5v1h-5zM10 5h1v1h-1zM2 6h1v1h-1zM10 6h1v1h-1zM2 7h1v1h-1zM4 7h4v1h-4zM10 7h1v1h-1zM2 8h1v1h-1zM10 8h2v1h-2zM2 9h9v1h-9z"/></svg> Шаги</h2>
+    <ol><li>Подготовка: обсушите мясо бумажным полотенцем и нарежьте крупными кусками примерно 3–4 см. Морковь нарежьте крупно, лук — крупными кубиками, чеснок порубите.</li><li>Бекон (по желанию): нарежьте брусочками и обжарьте в кастрюле или казане на среднем огне до румяности и вытапливания жира. Выложите бекон на тарелку, жир оставьте в кастрюле. Если бекона нет, переходите к следующему шагу.</li><li>Обжарка мяса: разогрейте в кастрюле 1 ст. л. сливочного масла и 1 ст. л. растительного (если жарили бекон, используйте его жир, при необходимости добавив немного масла). Обжаривайте говядину порциями на средне-сильном огне до золотистой корочки с разных сторон. Не кладите всё мясо сразу, иначе оно будет тушиться, а не жариться. Переложите мясо к бекону или на тарелку.</li><li>Овощи: в той же кастрюле обжарьте лук и морковь до мягкости и лёгкой румяности, около 5–7 минут. Добавьте чеснок и томатную пасту, прогрейте ещё 1 минуту, помешивая.</li><li>Соединяем: верните мясо и бекон в кастрюлю. Посыпьте мукой, перемешайте и обжаривайте 1–2 минуты, чтобы мука впитала соки.</li><li>Вино и тушение: влейте вино, доведите до кипения и дайте алкоголю выпариться, 3–5 минут. Добавьте бульон или воду, жидкость должна почти покрывать мясо. Положите тимьян и лавровый лист, посолите и поперчите. Накройте крышкой и тушите на медленном огне (или в духовке при 160 °C) 1,5–2 часа, пока мясо не станет мягким. Проверьте через 1 ч 15 мин.</li><li>Пюре: пока тушится мясо, отварите очищенный картофель в подсоленной воде до готовности. Слейте воду, добавьте горячее молоко и сливочное масло, разомните до гладкости. Приправьте солью и, по желанию, мускатным орехом.</li><li>Финал: достаньте из кастрюли веточки тимьяна и лавровый лист. Попробуйте соус, при необходимости добавьте соль и перец. Если соус жидковат, выпарьте его без крышки на сильном огне 5–10 минут, помешивая.</li><li>Подача: выложите на тарелку пюре, рядом мясо, щедро полейте соусом. По желанию посыпьте свежей петрушкой.</li></ol>
+  </section>
+  <section class="block px" aria-labelledby="nt-h-4">
+    <h2 id="nt-h-4"><svg class="ico" width="20" height="18" viewBox="0 0 11 10" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5 0h1v1h-1zM4 1h3v1h-3zM3 2h2v1h-2zM6 2h2v1h-2zM3 3h1v1h-1zM7 3h1v1h-1zM2 4h7v1h-7zM3 5h5v1h-5zM4 6h3v1h-3zM5 7h1v1h-1zM3 8h5v1h-5zM2 9h7v1h-7z"/></svg> Заметки</h2>
+    <p>Рецепт рассчитан на 600 г говядины, получается примерно 3–4 порции. Бекон — по желанию, без него просто пропустите шаг.</p>
+  </section>
+</article>
+    <section class="screen" id="screen-stub" data-screen="stub" hidden>
+      <a class="btn back" href="#/">← К списку</a>
+      <div class="block px"><h1 tabindex="-1" class="pixel" style="font-size:15px;line-height:1.6;margin:0 0 8px">Только в основном сайте</h1><p>В прототипе подробно показаны рецепты 4 и 6.</p></div>
+    </section>
+  </main>
+  <footer class="foot">Прототип не связан с основным сайтом. Шрифт заголовков: Press Start 2P, запасной — Courier New.</footer>
+</div>
+<script src="redesign.js"></script>
+</body>
+</html>
