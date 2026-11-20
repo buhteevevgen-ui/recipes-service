@@ -41,5 +41,13 @@
       apply(name);
       save(name);
     });
+    // Полоса разделов прокручивается по горизонтали; браузер не докручивает
+    // частично видимый чип, получивший фокус, — докручиваем сами (с учётом scroll-padding-inline).
+    document.addEventListener('focusin', function (ev) {
+      var t = ev.target;
+      if (t && t.closest && t.closest('.sections') && t.scrollIntoView) {
+        t.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }
+    });
   });
 })();

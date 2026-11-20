@@ -303,6 +303,7 @@ code {
 .sections {
   display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
   margin: 0 -20px 4px; padding: 8px 24px 16px;
+  scroll-padding-inline: 24px;
 }
 .sections::-webkit-scrollbar { display: none; }
 .section {
@@ -352,7 +353,7 @@ code {
   top: 0;
   z-index: 2;
   background: var(--bg);
-  padding: 8px var(--px) 16px;
+  padding: 8px var(--px);
 }
 .search input {
   display: block;
@@ -379,7 +380,13 @@ code {
 }
 
 /* Список */
-.list { list-style: none; padding: 0 var(--px); margin: 0; display: grid; gap: 20px; }
+.list { list-style: none; padding: 0 var(--px); margin: 8px 0 0; display: grid; gap: 20px; }
+/* Рамка фокуса (8 px) не уходит под нижний край; закреплённый поиск (8 + 52 + 8 = 68 px)
+   не закрывает элемент в фокусе: 68 + 8 рамка + 4 запас */
+html { scroll-padding-bottom: 12px; }
+html:has(.search) { scroll-padding-top: 80px; }
+/* На широком экране разделы переносятся, а не уходят за край */
+@media (min-width: 700px) { .sections { flex-wrap: wrap; } }
 .item a {
   display: block;
   margin: var(--px);
