@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Сервис рецептов</title>
   <meta name="description" content="Личная книга рецептов с поиском">
-  <meta name="theme-color" content="#f6f1e7">
+  <meta name="theme-color" content="#4a0709">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23b4532a'/%3E%3Cpath d='M9 17h14a7 7 0 0 1-14 0z' fill='%23f6f1e7'/%3E%3C/svg%3E">
+  <script src="theme.js"></script>
+  <link rel="preload" href="fonts/rs-pixel.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="bbq.css">
 </head>
@@ -24,7 +26,13 @@
   </main>
 
   <footer class="foot">
-    Рецепты хранятся в файле <code>recipes.json</code> в репозитории.
+    <p>Рецепты хранятся в файле <code>recipes.json</code> в репозитории.</p>
+    <fieldset class="themes">
+      <legend>Тема</legend>
+      <button type="button" data-theme-set="crypt" aria-pressed="false">Склеп</button>
+      <button type="button" data-theme-set="parchment" aria-pressed="false">Пергамент</button>
+      <button type="button" data-theme-set="ember" aria-pressed="false">Жар</button>
+    </fieldset>
   </footer>
 
   <script src="app.js"></script>
